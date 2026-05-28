@@ -8,7 +8,7 @@ A production-style Node.js backend for collaborative document writing and publis
 - **Framework:** Express.js
 - **Database:** MongoDB + Mongoose
 - **Auth:** JWT + bcrypt
-- **Validation:** express-validator
+- **Validation:** express-validator.
 
 ---
 

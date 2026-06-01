@@ -4,24 +4,64 @@ const ErrorResponse = require('../utils/ErrorResponse');
 const { logActivity } = require('./activityLogService');
 
 /**
- * Create a new document inside a workspace.
+ * Helper to check permissions on a workspace.
+ * @param {string} workspaceId - ID of the workspace
+ * @param {Object} user - Requesting user object
+ * @param {Array<string>} allowedRoles - Roles allowed for this action (e.g. ['owner', 'editor'])
+ * @returns {Workspace} The fetched workspace
  */
-const createDocument = async ({ title, content, workspaceId, userId }) => {
-  // Verify workspace exists
+const verifyWorkspacePermission = async (workspaceId, user, allowedRoles = []) => {
+  if (!user) {
+    throw new ErrorResponse('Not authorized', 401);
+  }
+
+  // System admins bypass all workspace checks
+  if (user.role === 'admin') {
+    const workspace = await Workspace.findById(workspaceId);
+    if (!workspace) {
+      throw new ErrorResponse('Workspace not found', 404);
+    }
+    return workspace;
+  }
+
   const workspace = await Workspace.findById(workspaceId);
   if (!workspace) {
     throw new ErrorResponse('Workspace not found', 404);
   }
 
-  // Verify user is a member
-  const isMember =
-    workspace.owner.toString() === userId.toString() ||
-    workspace.members.some((m) => m.user.toString() === userId.toString());
+  // Check if owner
+  if (workspace.owner.toString() === user._id.toString()) {
+    return workspace;
+  }
 
-  if (!isMember) {
+  // Check membership
+  const member = workspace.members.find(
+    (m) => m.user.toString() === user._id.toString()
+  );
+
+  if (!member) {
     throw new ErrorResponse('You are not a member of this workspace', 403);
   }
 
+  // Check specific roles if provided
+  if (allowedRoles.length > 0 && !allowedRoles.includes(member.role)) {
+    throw new ErrorResponse(
+      `Role '${member.role}' is not authorized for this action`,
+      403
+    );
+  }
+
+  return workspace;
+};
+
+/**
+ * Create a new document inside a workspace.
+ */
+const createDocument = async ({ title, content, workspaceId, user }) => {
+  // Only owner or editor can create documents (admins bypass)
+  await verifyWorkspacePermission(workspaceId, user, ['owner', 'editor']);
+
+  const userId = user._id;
   const document = await Document.create({
     title,
     content: content || '',
@@ -45,7 +85,7 @@ const createDocument = async ({ title, content, workspaceId, userId }) => {
 /**
  * Get a document by ID.
  */
-const getDocumentById = async (documentId) => {
+const getDocumentById = async (documentId, user) => {
   const document = await Document.findById(documentId)
     .populate('author', 'name email')
     .populate('collaborators', 'name email')
@@ -54,6 +94,9 @@ const getDocumentById = async (documentId) => {
   if (!document) {
     throw new ErrorResponse('Document not found', 404);
   }
+
+  // Verify workspace membership (admins bypass)
+  await verifyWorkspacePermission(document.workspaceId._id || document.workspaceId, user);
 
   return document;
 };
@@ -70,12 +113,15 @@ const getDocumentsByWorkspace = async (workspaceId) => {
 /**
  * Update a document (edit / save draft).
  */
-const updateDocument = async (documentId, updateData, userId) => {
+const updateDocument = async (documentId, updateData, user) => {
   const document = await Document.findById(documentId);
 
   if (!document) {
     throw new ErrorResponse('Document not found', 404);
   }
+
+  // Only owner or editor can update documents (admins bypass)
+  await verifyWorkspacePermission(document.workspaceId, user, ['owner', 'editor']);
 
   // Update fields
   if (updateData.title !== undefined) document.title = updateData.title;
@@ -83,6 +129,7 @@ const updateDocument = async (documentId, updateData, userId) => {
 
   await document.save();
 
+  const userId = user._id;
   await logActivity({
     workspaceId: document.workspaceId,
     documentId: document._id,
@@ -97,11 +144,23 @@ const updateDocument = async (documentId, updateData, userId) => {
 /**
  * Delete a document.
  */
-const deleteDocument = async (documentId, userId) => {
+const deleteDocument = async (documentId, user) => {
   const document = await Document.findById(documentId);
 
   if (!document) {
     throw new ErrorResponse('Document not found', 404);
+  }
+
+  const workspace = await verifyWorkspacePermission(document.workspaceId, user);
+  const userId = user._id;
+
+  // Delete requires workspace owner, original author, or admin
+  const isOwner = workspace.owner.toString() === userId.toString();
+  const isAuthor = document.author.toString() === userId.toString();
+  const isAdmin = user.role === 'admin';
+
+  if (!isOwner && !isAuthor && !isAdmin) {
+    throw new ErrorResponse('Not authorized to delete this document', 403);
   }
 
   await logActivity({
@@ -120,12 +179,15 @@ const deleteDocument = async (documentId, userId) => {
 /**
  * Publish or unpublish a document.
  */
-const togglePublish = async (documentId, userId) => {
+const togglePublish = async (documentId, user) => {
   const document = await Document.findById(documentId);
 
   if (!document) {
     throw new ErrorResponse('Document not found', 404);
   }
+
+  // Only owner or editor can publish (admins bypass)
+  await verifyWorkspacePermission(document.workspaceId, user, ['owner', 'editor']);
 
   document.status = document.status === 'draft' ? 'published' : 'draft';
   await document.save();
@@ -133,6 +195,7 @@ const togglePublish = async (documentId, userId) => {
   const action =
     document.status === 'published' ? 'document_published' : 'document_unpublished';
 
+  const userId = user._id;
   await logActivity({
     workspaceId: document.workspaceId,
     documentId: document._id,

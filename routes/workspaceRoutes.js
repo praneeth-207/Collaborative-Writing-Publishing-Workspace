@@ -30,7 +30,7 @@ router.post(
 router.get('/', getWorkspaces);
 
 // @route   GET /api/workspaces/:id
-router.get('/:id', getWorkspace);
+router.get('/:id', authorize('owner', 'editor', 'viewer'), getWorkspace);
 
 // @route   PUT /api/workspaces/:id
 router.put(
@@ -64,7 +64,7 @@ router.post(
 router.get('/:id/logs', authorize('owner', 'editor', 'viewer'), getActivityLogs);
 
 // @route   GET /api/workspaces/:id/documents
-router.get('/:id/documents', getWorkspaceDocuments);
+router.get('/:id/documents', authorize('owner', 'editor', 'viewer'), getWorkspaceDocuments);
 
 // @route   POST /api/workspaces/:id/leave
 router.post('/:id/leave', leaveWorkspace);

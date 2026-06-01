@@ -19,7 +19,7 @@ const createDocument = async (req, res, next) => {
       title,
       content,
       workspaceId,
-      userId: req.user._id,
+      user: req.user,
     });
 
     res.status(201).json({ success: true, data });
@@ -35,7 +35,7 @@ const createDocument = async (req, res, next) => {
  */
 const getDocument = async (req, res, next) => {
   try {
-    const data = await documentService.getDocumentById(req.params.id);
+    const data = await documentService.getDocumentById(req.params.id, req.user);
     res.status(200).json({ success: true, data });
   } catch (error) {
     next(error);
@@ -52,7 +52,7 @@ const updateDocument = async (req, res, next) => {
     const data = await documentService.updateDocument(
       req.params.id,
       req.body,
-      req.user._id
+      req.user
     );
     res.status(200).json({ success: true, data });
   } catch (error) {
@@ -67,7 +67,7 @@ const updateDocument = async (req, res, next) => {
  */
 const deleteDocument = async (req, res, next) => {
   try {
-    const data = await documentService.deleteDocument(req.params.id, req.user._id);
+    const data = await documentService.deleteDocument(req.params.id, req.user);
     res.status(200).json({ success: true, data });
   } catch (error) {
     next(error);
@@ -81,7 +81,7 @@ const deleteDocument = async (req, res, next) => {
  */
 const publishDocument = async (req, res, next) => {
   try {
-    const data = await documentService.togglePublish(req.params.id, req.user._id);
+    const data = await documentService.togglePublish(req.params.id, req.user);
     res.status(200).json({ success: true, data });
   } catch (error) {
     next(error);

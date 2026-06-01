@@ -72,7 +72,7 @@ const updateWorkspace = async (req, res, next) => {
     const data = await workspaceService.updateWorkspace(
       req.params.id,
       req.body,
-      req.user._id
+      req.user
     );
 
     res.status(200).json({ success: true, data });
@@ -88,7 +88,7 @@ const updateWorkspace = async (req, res, next) => {
  */
 const deleteWorkspace = async (req, res, next) => {
   try {
-    const data = await workspaceService.deleteWorkspace(req.params.id, req.user._id);
+    const data = await workspaceService.deleteWorkspace(req.params.id, req.user);
     res.status(200).json({ success: true, data });
   } catch (error) {
     next(error);
@@ -110,7 +110,7 @@ const manageMembers = async (req, res, next) => {
     const data = await workspaceService.manageMembers(
       req.params.id,
       req.body,
-      req.user._id
+      req.user
     );
 
     res.status(200).json({ success: true, data });
@@ -140,19 +140,6 @@ const getActivityLogs = async (req, res, next) => {
  */
 const getWorkspaceDocuments = async (req, res, next) => {
   try {
-    // 1. Verify workspace exists
-    const workspace = await workspaceService.getWorkspaceById(req.params.id);
-    const userId = req.user._id;
-
-    // 2. Verify membership
-    const isMember =
-      workspace.owner._id.toString() === userId.toString() ||
-      workspace.members.some((m) => m.user._id.toString() === userId.toString());
-
-    if (!isMember) {
-      return next(new ErrorResponse('You are not a member of this workspace', 403));
-    }
-
     const data = await documentService.getDocumentsByWorkspace(req.params.id);
     res.status(200).json({ success: true, count: data.length, data });
   } catch (error) {

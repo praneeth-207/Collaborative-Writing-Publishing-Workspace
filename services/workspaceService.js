@@ -55,15 +55,17 @@ const getWorkspaceById = async (workspaceId) => {
 /**
  * Update workspace details.
  */
-const updateWorkspace = async (workspaceId, updateData, userId) => {
+const updateWorkspace = async (workspaceId, updateData, user) => {
   const workspace = await Workspace.findById(workspaceId);
 
   if (!workspace) {
     throw new ErrorResponse('Workspace not found', 404);
   }
 
+  const userId = user._id;
+
   // Only owner or admin can update
-  if (workspace.owner.toString() !== userId.toString()) {
+  if (workspace.owner.toString() !== userId.toString() && user.role !== 'admin') {
     throw new ErrorResponse('Only the workspace owner can update it', 403);
   }
 
@@ -87,14 +89,16 @@ const updateWorkspace = async (workspaceId, updateData, userId) => {
 /**
  * Delete a workspace.
  */
-const deleteWorkspace = async (workspaceId, userId) => {
+const deleteWorkspace = async (workspaceId, user) => {
   const workspace = await Workspace.findById(workspaceId);
 
   if (!workspace) {
     throw new ErrorResponse('Workspace not found', 404);
   }
 
-  if (workspace.owner.toString() !== userId.toString()) {
+  const userId = user._id;
+
+  if (workspace.owner.toString() !== userId.toString() && user.role !== 'admin') {
     throw new ErrorResponse('Only the workspace owner can delete it', 403);
   }
 
@@ -114,15 +118,17 @@ const deleteWorkspace = async (workspaceId, userId) => {
  * Add or update a member in a workspace.
  * Body: { email, role, action: 'add' | 'remove' }
  */
-const manageMembers = async (workspaceId, { email, role, action }, userId) => {
+const manageMembers = async (workspaceId, { email, role, action }, user) => {
   const workspace = await Workspace.findById(workspaceId);
 
   if (!workspace) {
     throw new ErrorResponse('Workspace not found', 404);
   }
 
+  const userId = user._id;
+
   // Only owner can manage members
-  if (workspace.owner.toString() !== userId.toString()) {
+  if (workspace.owner.toString() !== userId.toString() && user.role !== 'admin') {
     throw new ErrorResponse('Only the workspace owner can manage members', 403);
   }
 

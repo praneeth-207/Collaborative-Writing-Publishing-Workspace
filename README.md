@@ -34,12 +34,14 @@ npm install
 
 ### Environment Variables
 
-| Variable      | Default                                         | Description               |
-| ------------- | ----------------------------------------------- | ------------------------- |
-| `PORT`        | `5000`                                          | Server port               |
-| `MONGODB_URI` | `mongodb://localhost:27017/collaborative_writing_db` | MongoDB connection string |
-| `JWT_SECRET`  | *(change in production)*                        | JWT signing secret        |
-| `JWT_EXPIRE`  | `7d`                                            | JWT token expiry          |
+| Variable             | Default                                         | Description               |
+| -------------------- | ----------------------------------------------- | ------------------------- |
+| `PORT`               | `5000`                                          | Server port               |
+| `MONGODB_URI`        | `mongodb://localhost:27017/collaborative_writing_db` | MongoDB connection string |
+| `JWT_SECRET`         | *(change in production)*                        | JWT signing secret        |
+| `JWT_EXPIRE`         | `30m`                                           | JWT access token expiry   |
+| `JWT_REFRESH_SECRET` | *(change in production)*                        | JWT refresh token secret  |
+| `JWT_REFRESH_EXPIRE` | `30d`                                           | JWT refresh token expiry  |
 
 ### Run the Server
 
@@ -101,11 +103,14 @@ backend/
 
 ### Auth Routes
 
-| Method | Endpoint             | Auth | Description          |
-| ------ | -------------------- | ---- | -------------------- |
-| POST   | `/api/auth/register` | No   | Register a new user  |
-| POST   | `/api/auth/login`    | No   | Login & get token    |
-| GET    | `/api/auth/profile`  | Yes  | Get current profile  |
+| Method | Endpoint             | Auth | Description                   |
+| ------ | -------------------- | ---- | ----------------------------- |
+| POST   | `/api/auth/register` | No   | Register a new user           |
+| POST   | `/api/auth/login`    | No   | Login & get tokens            |
+| POST   | `/api/auth/refresh`  | No   | Refresh access & refresh token|
+| POST   | `/api/auth/logout`   | Yes  | Revoke session (Logout)       |
+| GET    | `/api/auth/profile`  | Yes  | Get current profile           |
+| DELETE | `/api/auth/profile`  | Yes  | Delete account & cascade clean|
 
 ### Workspace Routes
 
@@ -118,6 +123,9 @@ backend/
 | DELETE | `/api/workspaces/:id`          | Yes  | Delete workspace (Owner)  |
 | POST   | `/api/workspaces/:id/members`  | Yes  | Add/remove members (Owner)|
 | GET    | `/api/workspaces/:id/logs`     | Yes  | Get activity logs         |
+| GET    | `/api/workspaces/:id/documents`| Yes  | Get workspace documents   |
+| POST   | `/api/workspaces/:id/leave`    | Yes  | Leave workspace           |
+
 
 ### Document Routes
 
@@ -172,6 +180,24 @@ Content-Type: application/json
 
 ```
 GET http://localhost:5000/api/auth/profile
+Authorization: Bearer <token>
+```
+
+### 3a. Refresh Token
+
+```
+POST http://localhost:5000/api/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "<refreshToken>"
+}
+```
+
+### 3b. Logout
+
+```
+POST http://localhost:5000/api/auth/logout
 Authorization: Bearer <token>
 ```
 

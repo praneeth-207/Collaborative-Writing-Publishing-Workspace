@@ -13,9 +13,9 @@ const ErrorResponse = require('../utils/ErrorResponse');
 const authorize = (...roles) => {
   return async (req, res, next) => {
     try {
-      // System admins bypass workspace-level checks
-      if (req.user.role === 'admin') {
-        return next();
+      // Safety check in case protect middleware is missing or out of order
+      if (!req.user) {
+        return next(new ErrorResponse('Not authorized', 401));
       }
 
       const workspaceId =
@@ -29,6 +29,14 @@ const authorize = (...roles) => {
 
       if (!workspace) {
         return next(new ErrorResponse('Workspace not found', 404));
+      }
+
+      // Attach workspace so controllers can use it
+      req.workspace = workspace;
+
+      // System admins bypass workspace-level membership/owner checks
+      if (req.user.role === 'admin') {
+        return next();
       }
 
       // Check if user is the workspace owner

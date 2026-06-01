@@ -17,7 +17,7 @@ const addComment = async (req, res, next) => {
     const { documentId, comment } = req.body;
     const data = await commentService.addComment({
       documentId,
-      userId: req.user._id,
+      user: req.user,
       comment,
     });
 
@@ -34,7 +34,7 @@ const addComment = async (req, res, next) => {
  */
 const getComments = async (req, res, next) => {
   try {
-    const data = await commentService.getCommentsByDocument(req.params.documentId);
+    const data = await commentService.getCommentsByDocument(req.params.documentId, req.user);
     res.status(200).json({ success: true, count: data.length, data });
   } catch (error) {
     next(error);

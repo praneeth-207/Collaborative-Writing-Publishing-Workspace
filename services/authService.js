@@ -4,7 +4,8 @@ const Document = require('../models/Document');
 const Comment = require('../models/Comment');
 const ActivityLog = require('../models/ActivityLog');
 const ErrorResponse = require('../utils/ErrorResponse');
-const generateToken = require('../utils/generateToken');
+const { generateToken, generateRefreshToken } = require('../utils/generateToken');
+const jwt = require('jsonwebtoken');
 
 /**
  * Register a new user.
@@ -18,12 +19,19 @@ const registerUser = async ({ name, email, password }) => {
 
   const user = await User.create({ name, email, password });
 
+  const token = generateToken(user._id);
+  const refreshToken = generateRefreshToken(user._id);
+
+  user.refreshToken = refreshToken;
+  await user.save();
+
   return {
     _id: user._id,
     name: user.name,
     email: user.email,
     role: user.role,
-    token: generateToken(user._id),
+    token,
+    refreshToken,
   };
 };
 
@@ -42,12 +50,19 @@ const loginUser = async ({ email, password }) => {
     throw new ErrorResponse('Invalid credentials', 401);
   }
 
+  const token = generateToken(user._id);
+  const refreshToken = generateRefreshToken(user._id);
+
+  user.refreshToken = refreshToken;
+  await user.save();
+
   return {
     _id: user._id,
     name: user.name,
     email: user.email,
     role: user.role,
-    token: generateToken(user._id),
+    token,
+    refreshToken,
   };
 };
 
@@ -118,4 +133,57 @@ const deleteUserAccount = async (userId) => {
   return { message: 'User account and all associated data deleted successfully' };
 };
 
-module.exports = { registerUser, loginUser, getProfile, deleteUserAccount };
+/**
+ * Verify a refresh token and return a new access token.
+ */
+const refreshAccessToken = async (token) => {
+  if (!token) {
+    throw new ErrorResponse('Refresh token is required', 400);
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET || 'refresh_secret_123_abc');
+    const user = await User.findById(decoded.id).select('+refreshToken');
+
+    if (!user || user.refreshToken !== token) {
+      throw new ErrorResponse('Invalid refresh token', 401);
+    }
+
+    const newAccessToken = generateToken(user._id);
+    const newRefreshToken = generateRefreshToken(user._id);
+
+    user.refreshToken = newRefreshToken;
+    await user.save();
+
+    return {
+      token: newAccessToken,
+      refreshToken: newRefreshToken,
+    };
+  } catch (error) {
+    throw new ErrorResponse('Invalid or expired refresh token', 401);
+  }
+};
+
+/**
+ * Revoke a user's refresh token (logout).
+ */
+const logoutUser = async (userId) => {
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new ErrorResponse('User not found', 404);
+  }
+
+  user.refreshToken = null;
+  await user.save();
+
+  return { message: 'Logged out successfully' };
+};
+
+module.exports = {
+  registerUser,
+  loginUser,
+  getProfile,
+  deleteUserAccount,
+  refreshAccessToken,
+  logoutUser,
+};

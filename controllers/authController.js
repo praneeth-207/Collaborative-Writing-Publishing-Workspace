@@ -72,4 +72,37 @@ const deleteProfile = async (req, res, next) => {
   }
 };
 
-module.exports = { register, login, getProfile, deleteProfile };
+/**
+ * @desc    Refresh access token
+ * @route   POST /api/auth/refresh
+ * @access  Public
+ */
+const refresh = async (req, res, next) => {
+  try {
+    const { refreshToken } = req.body;
+    if (!refreshToken) {
+      return next(new ErrorResponse('Refresh token is required', 400));
+    }
+
+    const data = await authService.refreshAccessToken(refreshToken);
+    res.status(200).json({ success: true, data });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Logout user (revoke refresh token)
+ * @route   POST /api/auth/logout
+ * @access  Private
+ */
+const logout = async (req, res, next) => {
+  try {
+    const result = await authService.logoutUser(req.user._id);
+    res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { register, login, getProfile, deleteProfile, refresh, logout };

@@ -162,8 +162,17 @@ const swaggerDocument = {
                   type: 'object',
                   properties: {
                     success: { type: 'boolean', example: true },
-                    token: { type: 'string', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' },
-                    user: { $ref: '#/components/schemas/User' },
+                    data: {
+                      type: 'object',
+                      properties: {
+                        _id: { type: 'string', example: '60c72b2f9b1d8b2a3c8e4d1a' },
+                        name: { type: 'string', example: 'Jane Doe' },
+                        email: { type: 'string', format: 'email', example: 'janedoe@example.com' },
+                        role: { type: 'string', example: 'user' },
+                        token: { type: 'string', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' },
+                        refreshToken: { type: 'string', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' },
+                      },
+                    },
                   },
                 },
               },
@@ -209,8 +218,17 @@ const swaggerDocument = {
                   type: 'object',
                   properties: {
                     success: { type: 'boolean', example: true },
-                    token: { type: 'string', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' },
-                    user: { $ref: '#/components/schemas/User' },
+                    data: {
+                      type: 'object',
+                      properties: {
+                        _id: { type: 'string', example: '60c72b2f9b1d8b2a3c8e4d1a' },
+                        name: { type: 'string', example: 'Jane Doe' },
+                        email: { type: 'string', format: 'email', example: 'janedoe@example.com' },
+                        role: { type: 'string', example: 'user' },
+                        token: { type: 'string', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' },
+                        refreshToken: { type: 'string', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' },
+                      },
+                    },
                   },
                 },
               },
@@ -235,6 +253,110 @@ const swaggerDocument = {
         },
       },
     },
+    '/auth/refresh': {
+      post: {
+        tags: ['Authentication'],
+        summary: 'Refresh access token',
+        description: 'Verify the refresh token and return a new access token and a rotated refresh token.',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['refreshToken'],
+                properties: {
+                  refreshToken: { type: 'string', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: 'Token refreshed successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean', example: true },
+                    data: {
+                      type: 'object',
+                      properties: {
+                        token: { type: 'string', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' },
+                        refreshToken: { type: 'string', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: 'Validation error (missing refresh token)',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ErrorResponse' },
+              },
+            },
+          },
+          401: {
+            description: 'Invalid or expired refresh token',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ErrorResponse' },
+              },
+            },
+          },
+        },
+      },
+    },
+    '/auth/logout': {
+      post: {
+        tags: ['Authentication'],
+        summary: 'Logout user',
+        description: 'Revokes the user\'s refresh token.',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: {
+            description: 'Logged out successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean', example: true },
+                    data: {
+                      type: 'object',
+                      properties: {
+                        message: { type: 'string', example: 'Logged out successfully' },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          401: {
+            description: 'Unauthorized',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ErrorResponse' },
+              },
+            },
+          },
+          404: {
+            description: 'User not found',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ErrorResponse' },
+              },
+            },
+          },
+        },
+      },
+    },
     '/auth/profile': {
       get: {
         tags: ['Authentication'],
@@ -250,7 +372,7 @@ const swaggerDocument = {
                   type: 'object',
                   properties: {
                     success: { type: 'boolean', example: true },
-                    user: { $ref: '#/components/schemas/User' },
+                    data: { $ref: '#/components/schemas/User' },
                   },
                 },
               },

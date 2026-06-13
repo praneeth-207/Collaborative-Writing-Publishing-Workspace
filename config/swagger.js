@@ -136,7 +136,7 @@ const swaggerDocument = {
       post: {
         tags: ['Authentication'],
         summary: 'Register a new user',
-        description: 'Creates a new user account and returns a JWT token.',
+        description: 'Creates a new user account and sends a 6-digit OTP code to their email.',
         requestBody: {
           required: true,
           content: {
@@ -155,7 +155,53 @@ const swaggerDocument = {
         },
         responses: {
           201: {
-            description: 'User registered successfully',
+            description: 'User registered successfully, OTP sent',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean', example: true },
+                    message: { type: 'string', example: 'Registration successful. Please verify your email with the OTP sent to your inbox.' },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: 'Validation error / User already exists and is verified',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ErrorResponse' },
+              },
+            },
+          },
+        },
+      },
+    },
+    '/auth/verify-otp': {
+      post: {
+        tags: ['Authentication'],
+        summary: 'Verify user registration OTP',
+        description: 'Verifies the 6-digit OTP sent to the user\'s email during registration, activates their account, and returns access and refresh tokens.',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['email', 'otpCode'],
+                properties: {
+                  email: { type: 'string', format: 'email', example: 'janedoe@example.com' },
+                  otpCode: { type: 'string', example: '837291' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: 'OTP verified and account activated successfully',
             content: {
               'application/json': {
                 schema: {
@@ -179,7 +225,60 @@ const swaggerDocument = {
             },
           },
           400: {
-            description: 'Validation error / User already exists',
+            description: 'Validation error / Invalid OTP / Expired OTP',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ErrorResponse' },
+              },
+            },
+          },
+        },
+      },
+    },
+    '/auth/resend-otp': {
+      post: {
+        tags: ['Authentication'],
+        summary: 'Resend registration OTP code',
+        description: 'Generates and emails a new 6-digit OTP code to the unverified user.',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['email'],
+                properties: {
+                  email: { type: 'string', format: 'email', example: 'janedoe@example.com' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: 'OTP code resent successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean', example: true },
+                    message: { type: 'string', example: 'OTP resent successfully.' },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: 'User is already verified / Validation error',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ErrorResponse' },
+              },
+            },
+          },
+          404: {
+            description: 'User not found',
             content: {
               'application/json': {
                 schema: { $ref: '#/components/schemas/ErrorResponse' },
@@ -423,6 +522,105 @@ const swaggerDocument = {
           },
           404: {
             description: 'User not found',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ErrorResponse' },
+              },
+            },
+          },
+        },
+      },
+    },
+    '/auth/forgotpassword': {
+      post: {
+        tags: ['Authentication'],
+        summary: 'Request password reset email',
+        description: 'Sends a password reset token to the user\'s registered email address.',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['email'],
+                properties: {
+                  email: { type: 'string', format: 'email', example: 'janedoe@example.com' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: 'Reset email sent successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean', example: true },
+                    message: { type: 'string', example: 'Email sent successfully.' },
+                  },
+                },
+              },
+            },
+          },
+          404: {
+            description: 'No user found with that email address',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ErrorResponse' },
+              },
+            },
+          },
+        },
+      },
+    },
+    '/auth/resetpassword/{resettoken}': {
+      put: {
+        tags: ['Authentication'],
+        summary: 'Reset user password',
+        description: 'Resets the user\'s password using a valid, non-expired password reset token.',
+        parameters: [
+          {
+            name: 'resettoken',
+            in: 'path',
+            required: true,
+            description: 'The password reset token sent via email',
+            schema: { type: 'string' },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['password'],
+                properties: {
+                  password: { type: 'string', format: 'password', example: 'newPassword123' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: 'Password reset successful',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean', example: true },
+                    message: { type: 'string', example: 'Password reset successful.' },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: 'Invalid or expired reset token / Validation error',
             content: {
               'application/json': {
                 schema: { $ref: '#/components/schemas/ErrorResponse' },

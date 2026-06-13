@@ -17,7 +17,7 @@ const register = async (req, res, next) => {
     const { name, email, password } = req.body;
     const data = await authService.registerUser({ name, email, password });
 
-    res.status(201).json({ success: true, data });
+    res.status(201).json({ success: true, message: data.message });
   } catch (error) {
     next(error);
   }
@@ -105,4 +105,100 @@ const logout = async (req, res, next) => {
   }
 };
 
-module.exports = { register, login, getProfile, deleteProfile, refresh, logout };
+/**
+ * @desc    Verify user OTP
+ * @route   POST /api/auth/verify-otp
+ * @access  Public
+ */
+const verifyOTP = async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return next(new ErrorResponse(errors.array().map((e) => e.msg).join(', '), 400));
+    }
+
+    const { email, otpCode } = req.body;
+    const data = await authService.verifyOTP({ email, otpCode });
+
+    res.status(200).json({ success: true, data });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Resend verification OTP
+ * @route   POST /api/auth/resend-otp
+ * @access  Public
+ */
+const resendOTP = async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return next(new ErrorResponse(errors.array().map((e) => e.msg).join(', '), 400));
+    }
+
+    const { email } = req.body;
+    const data = await authService.resendOTP({ email });
+
+    res.status(200).json({ success: true, message: data.message });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Forgot password
+ * @route   POST /api/auth/forgotpassword
+ * @access  Public
+ */
+const forgotPassword = async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return next(new ErrorResponse(errors.array().map((e) => e.msg).join(', '), 400));
+    }
+
+    const { email } = req.body;
+    const result = await authService.forgotPassword({ email });
+
+    res.status(200).json({ success: true, message: result.message });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Reset password
+ * @route   PUT /api/auth/resetpassword/:resettoken
+ * @access  Public
+ */
+const resetPassword = async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return next(new ErrorResponse(errors.array().map((e) => e.msg).join(', '), 400));
+    }
+
+    const { resettoken } = req.params;
+    const { password } = req.body;
+    const result = await authService.resetPassword({ resetToken: resettoken, newPassword: password });
+
+    res.status(200).json({ success: true, message: result.message });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = {
+  register,
+  login,
+  getProfile,
+  deleteProfile,
+  refresh,
+  logout,
+  verifyOTP,
+  resendOTP,
+  forgotPassword,
+  resetPassword,
+};

@@ -103,14 +103,18 @@ backend/
 
 ### Auth Routes
 
-| Method | Endpoint             | Auth | Description                   |
-| ------ | -------------------- | ---- | ----------------------------- |
-| POST   | `/api/auth/register` | No   | Register a new user           |
-| POST   | `/api/auth/login`    | No   | Login & get tokens            |
-| POST   | `/api/auth/refresh`  | No   | Refresh access & refresh token|
-| POST   | `/api/auth/logout`   | Yes  | Revoke session (Logout)       |
-| GET    | `/api/auth/profile`  | Yes  | Get current profile           |
-| DELETE | `/api/auth/profile`  | Yes  | Delete account & cascade clean|
+| Method | Endpoint                             | Auth | Description                      |
+| ------ | ------------------------------------ | ---- | -------------------------------- |
+| POST   | `/api/auth/register`                 | No   | Register user (sends verification OTP) |
+| POST   | `/api/auth/verify-otp`               | No   | Verify registration OTP          |
+| POST   | `/api/auth/resend-otp`               | No   | Resend registration OTP          |
+| POST   | `/api/auth/login`                    | No   | Login & get tokens (verified users) |
+| POST   | `/api/auth/refresh`                  | No   | Refresh access & refresh token   |
+| POST   | `/api/auth/logout`                   | Yes  | Revoke session (Logout)          |
+| GET    | `/api/auth/profile`                  | Yes  | Get current profile              |
+| DELETE | `/api/auth/profile`                  | Yes  | Delete account & cascade clean   |
+| POST   | `/api/auth/forgotpassword`           | No   | Request password reset email     |
+| PUT    | `/api/auth/resetpassword/:resettoken`| No   | Reset password with token        |
 
 ### Workspace Routes
 

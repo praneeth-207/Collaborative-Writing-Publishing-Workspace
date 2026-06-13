@@ -1,6 +1,6 @@
 const express = require('express');
 const { body } = require('express-validator');
-const { register, login, getProfile, deleteProfile, refresh, logout } = require('../controllers/authController');
+const { register, login, getProfile, deleteProfile, refresh, logout, verifyOTP, resendOTP, forgotPassword, resetPassword } = require('../controllers/authController');
 const { protect } = require('../middleware/authMiddleware');
 
 const router = express.Router();
@@ -39,5 +39,44 @@ router.get('/profile', protect, getProfile);
 
 // @route   DELETE /api/auth/profile
 router.delete('/profile', protect, deleteProfile);
+
+// @route   POST /api/auth/verify-otp
+router.post(
+  '/verify-otp',
+  [
+    body('email').isEmail().withMessage('Please provide a valid email'),
+    body('otpCode').isLength({ min: 6, max: 6 }).withMessage('OTP code must be 6 digits'),
+  ],
+  verifyOTP
+);
+
+// @route   POST /api/auth/resend-otp
+router.post(
+  '/resend-otp',
+  [
+    body('email').isEmail().withMessage('Please provide a valid email'),
+  ],
+  resendOTP
+);
+
+// @route   POST /api/auth/forgotpassword
+router.post(
+  '/forgotpassword',
+  [
+    body('email').isEmail().withMessage('Please provide a valid email'),
+  ],
+  forgotPassword
+);
+
+// @route   PUT /api/auth/resetpassword/:resettoken
+router.put(
+  '/resetpassword/:resettoken',
+  [
+    body('password')
+      .isLength({ min: 6 })
+      .withMessage('Password must be at least 6 characters'),
+  ],
+  resetPassword
+);
 
 module.exports = router;

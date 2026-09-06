@@ -1,16 +1,51 @@
-# React + Vite
+# Collaborative Writing & Publishing Workspace — Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+A production-style React frontend for a collaborative document writing and publishing workspace, with real-time editing features.
 
-Currently, two official plugins are available:
+## Tech Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Framework:** React + Vite
+- **Routing:** React Router
+- **Real-time Engine:** Socket.io-client
+- **Rich Text Editor:** React-Quill
+- **Styling:** Vanilla CSS (Dark Mode Design)
+- **Icons:** Lucide React
+- **API Calls:** Axios
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Features
 
-## Expanding the Oxlint configuration
+1. **Authentication:** Register and Login with OTP email verification.
+2. **Workspaces:** Create workspaces and manage members (Owner, Editor, Viewer).
+3. **Real-time Collaboration:** Multiple users can edit a document simultaneously, and see changes in real-time (via WebSockets).
+4. **Rich Text Editor:** Fully featured editor to style documents.
+5. **Commenting:** Add inline comments to documents.
+6. **Public Publishing:** Generate a public, shareable URL for published documents.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+---
+
+## Getting Started
+
+### Installation
+
+```bash
+# Clone / navigate to the frontend folder
+cd frontend
+
+# Install dependencies (use legacy-peer-deps for React-Quill)
+npm install --legacy-peer-deps
+```
+
+### Run the App
+
+```bash
+# Development server
+npm run dev
+
+# Build for production
+npm run build
+```
+
+By default, the Vite dev server runs on `http://localhost:5173`. 
+The backend API is expected to be running on `http://localhost:5000`.

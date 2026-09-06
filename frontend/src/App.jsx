@@ -8,6 +8,7 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import WorkspaceView from './pages/WorkspaceView';
 import DocumentEditor from './pages/DocumentEditor';
+import PublicDocumentView from './pages/PublicDocumentView';
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -22,6 +23,7 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/public/:id" element={<PublicDocumentView />} />
           
           {/* Protected Routes */}
           <Route 

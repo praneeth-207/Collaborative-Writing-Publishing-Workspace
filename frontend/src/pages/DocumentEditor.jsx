@@ -1,10 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { getDocument, updateDocument, deleteDocument, togglePublish } from '../services/documentService';
 import { getComments, addComment } from '../services/commentService';
 import { useAuth } from '../context/AuthContext';
-import { ArrowLeft, Save, Globe, Trash2, MessageSquare, Send } from 'lucide-react';
+import { ArrowLeft, Save, Globe, Trash2, MessageSquare, Send, Link as LinkIcon, Check } from 'lucide-react';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
+import io from 'socket.io-client';
+
+const SOCKET_SERVER_URL = 'http://localhost:5000';
 
 const DocumentEditor = () => {
   const { id } = useParams();
@@ -24,6 +29,12 @@ const DocumentEditor = () => {
   // Comment State
   const [newComment, setNewComment] = useState('');
   const [showComments, setShowComments] = useState(true);
+  
+  // Share link state
+  const [copied, setCopied] = useState(false);
+
+  // Socket
+  const socketRef = useRef(null);
 
   const fetchData = async () => {
     try {
@@ -47,6 +58,36 @@ const DocumentEditor = () => {
   useEffect(() => {
     fetchData();
   }, [id]);
+
+  useEffect(() => {
+    // Setup Socket
+    socketRef.current = io(SOCKET_SERVER_URL);
+    
+    socketRef.current.emit('join-document', id);
+    
+    socketRef.current.on('receive-changes', (data) => {
+      setContent(data.content);
+    });
+
+    socketRef.current.on('receive-title-change', (data) => {
+      setTitle(data.title);
+    });
+
+    return () => {
+      socketRef.current.disconnect();
+    };
+  }, [id]);
+
+  const handleContentChange = (value) => {
+    setContent(value);
+    socketRef.current.emit('send-changes', { documentId: id, content: value });
+  };
+
+  const handleTitleChange = (e) => {
+    const newTitle = e.target.value;
+    setTitle(newTitle);
+    socketRef.current.emit('send-title-change', { documentId: id, title: newTitle });
+  };
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -95,6 +136,13 @@ const DocumentEditor = () => {
     }
   };
 
+  const handleCopyLink = () => {
+    const publicUrl = `${window.location.origin}/public/${id}`;
+    navigator.clipboard.writeText(publicUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   if (loading) return <><Navbar /><div className="page-container container"><div className="spinner"></div></div></>;
   if (!document) return null;
 
@@ -116,6 +164,14 @@ const DocumentEditor = () => {
               <button className="btn btn-outline" onClick={handleSave} disabled={isSaving}>
                 {isSaving ? <div className="spinner" style={{width: 14, height: 14}}></div> : <Save size={16} />} Save
               </button>
+              
+              {document.status === 'published' && (
+                <button className="btn btn-outline" onClick={handleCopyLink} title="Copy Public Link">
+                  {copied ? <Check size={16} color="var(--success-color)" /> : <LinkIcon size={16} />} 
+                  {copied ? 'Copied!' : 'Copy Link'}
+                </button>
+              )}
+              
               <button className={`btn ${document.status === 'published' ? 'btn-outline' : 'btn-primary'}`} onClick={handleTogglePublish}>
                 <Globe size={16} /> {document.status === 'published' ? 'Unpublish' : 'Publish'}
               </button>
@@ -132,7 +188,7 @@ const DocumentEditor = () => {
             <input 
               type="text" 
               value={title}
-              onChange={e => setTitle(e.target.value)}
+              onChange={handleTitleChange}
               style={{ 
                 background: 'transparent', border: 'none', borderBottom: '1px solid var(--border-color)', 
                 color: 'var(--text-primary)', fontSize: '2rem', fontWeight: 'bold', marginBottom: '1.5rem',
@@ -141,16 +197,15 @@ const DocumentEditor = () => {
               placeholder="Document Title"
             />
             
-            <textarea 
-              value={content}
-              onChange={e => setContent(e.target.value)}
-              style={{
-                flex: 1, background: 'transparent', border: 'none', color: 'var(--text-primary)',
-                fontSize: '1.1rem', lineHeight: 1.6, outline: 'none', resize: 'none', fontFamily: 'inherit',
-                padding: '0.5rem 0'
-              }}
-              placeholder="Start writing..."
-            />
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+              <ReactQuill 
+                theme="snow" 
+                value={content} 
+                onChange={handleContentChange}
+                style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+                placeholder="Start writing collaboratively..."
+              />
+            </div>
           </div>
         </div>
 

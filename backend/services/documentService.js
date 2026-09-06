@@ -207,6 +207,25 @@ const togglePublish = async (documentId, user) => {
   return document;
 };
 
+/**
+ * Get a public document by ID (only if published).
+ */
+const getPublicDocumentById = async (documentId) => {
+  const document = await Document.findById(documentId)
+    .populate('author', 'name')
+    .populate('workspaceId', 'name');
+
+  if (!document) {
+    throw new ErrorResponse('Document not found', 404);
+  }
+
+  if (document.status !== 'published') {
+    throw new ErrorResponse('This document is not public', 403);
+  }
+
+  return document;
+};
+
 module.exports = {
   createDocument,
   getDocumentById,
@@ -214,4 +233,5 @@ module.exports = {
   updateDocument,
   deleteDocument,
   togglePublish,
+  getPublicDocumentById,
 };

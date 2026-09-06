@@ -140,6 +140,7 @@ backend/
 | PUT    | `/api/documents/:id`           | Yes  | Update document         |
 | DELETE | `/api/documents/:id`           | Yes  | Delete document         |
 | POST   | `/api/documents/:id/publish`   | Yes  | Publish/unpublish       |
+| GET    | `/api/documents/public/:id`    | No   | Get public document     |
 
 ### Comment Routes
 

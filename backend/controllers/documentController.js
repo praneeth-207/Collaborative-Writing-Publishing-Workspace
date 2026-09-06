@@ -88,10 +88,25 @@ const publishDocument = async (req, res, next) => {
   }
 };
 
+/**
+ * @desc    Get a public document by ID
+ * @route   GET /api/documents/public/:id
+ * @access  Public
+ */
+const getPublicDocument = async (req, res, next) => {
+  try {
+    const data = await documentService.getPublicDocumentById(req.params.id);
+    res.status(200).json({ success: true, data });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createDocument,
   getDocument,
   updateDocument,
   deleteDocument,
   publishDocument,
+  getPublicDocument,
 };

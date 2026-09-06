@@ -6,12 +6,18 @@ const {
   updateDocument,
   deleteDocument,
   publishDocument,
+  getPublicDocument,
 } = require('../controllers/documentController');
 const { protect } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
-// All routes require authentication
+// @route   GET /api/documents/public/:id
+// @desc    Get a public document
+// @access  Public
+router.get('/public/:id', getPublicDocument);
+
+// All other routes require authentication
 router.use(protect);
 
 // @route   POST /api/documents
